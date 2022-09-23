@@ -1,52 +1,111 @@
-import React from 'react'
+import React, {useState, useEffect} from 'react'
 import styled from 'styled-components';
-import {Link} from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
+import {ToastContainer, toast} from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
+import { registerRoute } from '../utils/APIRoutes';
+
 
 const Register = () => {
+  const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const toastOptions = {
+    position: "bottom-right",
+    autoClose: 8000,
+    pauseOnHover: true,
+    draggable: true,
+    theme: "dark",
+  };
+  const [values, setValues] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("form")
+    if(handleValidation()){
+      console.log("data", registerRoute);
+      const {password, email, username} = values;
+      const {data} = await axios.post(registerRoute, {
+        username,
+        email,
+        password,
+      })
+     if(data.status === false){
+      toast.error(data.msg, toastOptions)
+     }
+     if(data.status === true){
+      localStorage.setItem('chat-app-user', JSON.stringify(data.user))
+      navigate("/");
+      toast.success(data.msg, toastOptions)
+     }
+    }
   }
-  const handleChange = (e) => {
 
+  const handleChange = (e) => {
+    setValues({...values, [e.target.name] : e.target.value})
   }
+
+  const handleValidation = () => {
+    const {password, confirmPassword, username, email} = values;
+    if(password !== confirmPassword){
+      toast.error('비밀번호가 다릅니다.', toastOptions)
+      return false;      
+    }else if (username.length < 3){
+      toast.error("유저이름은 3글자 이상입니다.", toastOptions);
+      return false;
+    }else if (password.length < 4){
+      toast.error("비밀번호는 4글자 이상입니다.", toastOptions);
+      return false;
+    }else if (email === ""){
+      toast.error("이메일을 입력해주세요", toastOptions);
+    }
+    return true;
+  }
+
+
 
   return (
-    <FormContainer>
-      <form onSubmit={(e) => handleSubmit(e)}>
-        <div className='brand'>
-          <h1>Logo</h1>
-          <h1>snappy</h1>
-        </div>
-        <input
-          type="text"
-          placeholder='Username'
-          name="username"
-          onChange={(e) => handleChange(e)}
-        />
-        <input
-          type="email"
-          placeholder='Email'
-          name="email"
-          onChange={(e) => handleChange(e)}
-        />
-        <input
-          type="password"
-          placeholder='Password'
-          name="password"
-          onChange={(e) => handleChange(e)}
-        />
-        <input
-          type="password"
-          placeholder='Confirm Password'
-          name="confirmPassword"
-          onChange={(e) => handleChange(e)}
-        />
-        <button type="submit">Create User</button>
-        <span><Link to="/login">already have an account ?</Link></span>
-      </form>
-    </FormContainer>
+    <>
+      <FormContainer>
+        <form onSubmit={(e) => handleSubmit(e)}>
+          <div className='brand'>
+            <h1>Logo</h1>
+            <h1>snappy</h1>
+          </div>
+          <input
+            type="text"
+            placeholder='Username'
+            name="username"
+            onChange={(e) => handleChange(e)}
+          />
+          <input
+            type="email"
+            placeholder='Email'
+            name="email"
+            onChange={(e) => handleChange(e)}
+          />
+          <input
+            type="password"
+            placeholder='Password'
+            name="password"
+            onChange={(e) => handleChange(e)}
+          />
+          <input
+            type="password"
+            placeholder='Confirm Password'
+            name="confirmPassword"
+            onChange={(e) => handleChange(e)}
+          />
+          <button type="submit">Create User</button>
+          <span>already have an account ?<Link to="/login">Login</Link></span>
+        </form>
+      </FormContainer>
+      <ToastContainer />
+    </>
   )
 }
 
