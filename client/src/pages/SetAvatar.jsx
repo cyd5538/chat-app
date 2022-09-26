@@ -8,6 +8,7 @@ import axios from 'axios';
 import { setAvatarRoute } from '../utils/APIRoutes';
 import { Buffer } from "buffer";
 
+
 const SetAvatar = () => {
     const api = "https://api.multiavatar.com/45678945"
     const navigate = useNavigate();
@@ -23,10 +24,32 @@ const SetAvatar = () => {
         draggable: true,
         theme: "dark",
     };
+
+    useEffect(() => {
+        if(!localStorage.getItem("chat-app-user")){
+            navigate('/login');
+        }
+    },[])
+
     const setProfilePicture = async () => {
         if(selectedAvatar===undefined){
             toast.error('please select an avatar', toastOptions)
+        }else{
+            const user = await JSON.parse(localStorage.getItem("chat-app-user"));
+            const {data} = await axios.post(`${setAvatarRoute}/${user._id}`, {
+                image: avatars[selectedAvatar]
+            });
+            
+            if(data.isSet){
+                user.isAvatarImageSet = true;
+                user.avatarImage = data.image;
+                localStorage.setItem("chat-app-user", JSON.stringify(user))
+                navigate('/')
+            }else{
+                toast.error("Error setting avatar, please try again", toastOptions)
+            }
         }
+
     }
    
     useEffect(() => {
@@ -36,6 +59,7 @@ const SetAvatar = () => {
               const image = await axios.get(
                 `${api}/${Math.round(Math.random() * 1000)}`
               );
+              // 버퍼데이터를 이미지로 표시하기 base64 64진법
               const buffer = new Buffer(image.data);
               data.push(buffer.toString("base64"));
             }
@@ -60,7 +84,8 @@ const SetAvatar = () => {
                 {avatars?.map((avatar, index) => {
                   return (
                     <div
-                      className={`avatar ${
+                    key={index}
+                    className={`avatar ${
                         selectedAvatar === index ? "selected" : ""
                       }`}
                     >
@@ -120,7 +145,7 @@ const Container = styled.div`
       }
     }
     .selected {
-      border: 0.4rem solid #4e0eff;
+      border: 0.4rem solid #ff9;
     }
   }
   .submit-btn {
